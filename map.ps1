@@ -1,18 +1,30 @@
-# Mount Azure File Share with storage account access keys
-function Get-TimeStamp {
-return "[{0:MM/dd/yy} {0:HH:mm:ss}]" -f (Get-Date)
-}
-$storageAccountName = "localhost\demostroagetest"
-$fileShareName = "demostroagetest.file.core.windows.net"
-$storageAccountKeys = "vFtRGip8Tn9nCbGtZczLr5cKCWaoytE/cnLYlWuaE3IenDi4jwdOhqrbXmS3BlXTzt9jRQ4f08A+ASt01bBEg=="
+$username = "demostroagetest"
+$password = ConvertTo-SecureString -String "YvFtRGip8Tn9nCbGtZczLr5cKCWaoytE/cnLYlWuaE3IenDi4jwdOhqrbXmS3BlXTzt9jRQ4f08A+ASt01bBEg==" -AsPlainText -Force
+$credential = New-Object System.Management.Automation.PSCredential -ArgumentList $username, $password
 
-$connectTestResult = Test-NetConnection -ComputerName $("$storageAccountName.file.core.windows.net") -Port 445
+$driveLetter = "Z"
+$storageAccountName = "demostroagetest"
+$fileShareName = "demo"
 
-if ($connectTestResult.TcpTestSucceeded) {
-$password = ConvertTo-SecureString -String $storageAccountKeys -AsPlainText -Force
-$credential = New-Object System.Management.Automation.PSCredential -ArgumentList "AZURE\$($storageAccountName)", $password
-New-PSDrive -Name Z -PSProvider FileSystem -Root "\\$($storageAccountName).file.core.windows.net\$($fileShareName)" -Credential $credential -Persist
+$logFilePath = "C:\MountFileShareLog.txt"
+
+# Create a timestamp for logging
+$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+$logEntry = "[$timestamp] "
+
+# Check if the drive exists and remove it
+if (Test-Path "${driveLetter}:\") {
+    Remove-PSDrive -Name $driveLetter -Force
+    $logEntry += "Drive " + $driveLetter + ":\ already exists and has been removed. "
 }
-else {
-Write-Output "$(Get-TimeStamp) Unable to reach the Azure storage account via port 445. Please check your network connection." | Out-File C:\FileShareMount.txt -Append
+
+# Map the network drive with credentials
+try {
+    New-PSDrive -Name $driveLetter -PSProvider FileSystem -Root "\\$($storageAccountName).file.core.windows.net\$($fileShareName)" -Credential $credential -Persist -ErrorAction Stop
+    $logEntry += "Drive " + $driveLetter + ":\ mapped successfully."
+} catch {
+    $logEntry += "Error: $_"
 }
+
+# Write log entry to C drive
+Add-Content -Path $logFilePath -Value $logEntry
