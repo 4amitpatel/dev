@@ -1,5 +1,5 @@
 $username = "demostroagetest"
-$password = ConvertTo-SecureString -String "YvFtRGip8Tn9nCbGtZczLr5cKCWaoytE/cnLYlWuaE3IenDi4jwdOhqrbXmS3BlXTzt9jRQ4f08A+ASt01bBEg==" -AsPlainText -Force
+$password = ConvertTo-SecureString -String "Password" -AsPlainText -Force
 $credential = New-Object System.Management.Automation.PSCredential -ArgumentList $username, $password
 
 $driveLetter = "Z"
