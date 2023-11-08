@@ -1,0 +1,26 @@
+param(
+    [string]$ResourceGroupName,
+    [string]$VMName,
+    [string]$StorageAccountName,
+    [string]$FileShareName
+)
+
+# Enable managed identity on the VM
+Set-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName -AssignIdentity $true
+
+# Wait briefly for the managed identity to become available
+Start-Sleep -Seconds 30
+
+# Assign read and write permissions to the managed identity
+$roleAssignment = New-AzRoleAssignment -SignInName "http://schemas.microsoft.com/identity/claims/objectid/<YourManagedIdentityObjectID>" -RoleDefinitionName "Storage File Data SMB Share Reader" -Scope "/subscriptions/<YourSubscriptionID>/resourceGroups/$ResourceGroupName/providers/Microsoft.Storage/storageAccounts/$StorageAccountName/fileServices/default/shares/$FileShareName"
+
+# Install the Azure Storage Module
+Install-Module -Name Az.Storage
+
+# Create a context using the managed identity
+$context = New-AzStorageContext -StorageAccountName $StorageAccountName -UseConnectedAccount -ResourceGroupName $ResourceGroupName
+
+# Access the Azure File Share
+$share = $FileShareName
+$file = "example.txt"
+Get-AzStorageFileContent -ShareName $share -Path $file -Context $context
